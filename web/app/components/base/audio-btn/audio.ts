@@ -12,7 +12,7 @@ export default class AudioPlayer {
   mediaSource: MediaSource | null
   audio: HTMLAudioElement
   audioContext: AudioContext
-  sourceBuffer?: SourceBuffer
+  sourceBuffer?: any
   cacheBuffers: ArrayBuffer[] = []
   pauseTimer: number | null = null
   msgId: string | undefined
@@ -23,16 +23,17 @@ export default class AudioPlayer {
   isPublic: boolean
   callback: ((event: string) => {}) | null
 
-  constructor(streamUrl: string, isPublic: boolean, msgId: string | undefined, msgContent: string | null | undefined, callback: ((event: string) => {}) | null) {
+  constructor(streamUrl: string, isPublic: boolean, msgId: string | undefined, msgContent: string | null | undefined, voice: string | undefined, callback: ((event: string) => {}) | null) {
     this.audioContext = new AudioContext()
     this.msgId = msgId
     this.msgContent = msgContent
     this.url = streamUrl
     this.isPublic = isPublic
+    this.voice = voice
     this.callback = callback
 
     // Compatible with iphone ios17 ManagedMediaSource
-    const MediaSource = window.MediaSource || window.ManagedMediaSource
+    const MediaSource = window.ManagedMediaSource || window.MediaSource
     if (!MediaSource) {
       Toast.notify({
         message: 'Your browser does not support audio streaming, if you are using an iPhone, please update to iOS 17.1 or later.',
@@ -42,6 +43,10 @@ export default class AudioPlayer {
     this.mediaSource = MediaSource ? new MediaSource() : null
     this.audio = new Audio()
     this.setCallback(callback)
+    if (!window.MediaSource) { // if use  ManagedMediaSource
+      this.audio.disableRemotePlayback = true
+      this.audio.controls = true
+    }
     this.audio.src = this.mediaSource ? URL.createObjectURL(this.mediaSource) : ''
     this.audio.autoplay = true
 
@@ -154,7 +159,6 @@ export default class AudioPlayer {
         this.mediaSource?.endOfStream()
         clearInterval(endTimer)
       }
-      console.log('finishStream  endOfStream endTimer')
     }, 10)
   }
 
@@ -169,7 +173,6 @@ export default class AudioPlayer {
         const arrayBuffer = this.cacheBuffers.shift()!
         this.sourceBuffer?.appendBuffer(arrayBuffer)
       }
-      console.log('finishStream  timer')
     }, 10)
   }
 
