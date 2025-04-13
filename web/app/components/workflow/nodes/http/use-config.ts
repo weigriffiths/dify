@@ -36,8 +36,12 @@ const useConfig = (id: string, payload: HttpNodeType) => {
         ...inputs,
       }
       const bodyData = newInputs.body.data
-      if (typeof bodyData === 'string')
-        newInputs.body.data = transformToBodyPayload(bodyData, [BodyType.formData, BodyType.xWwwFormUrlencoded].includes(newInputs.body.type))
+      if (typeof bodyData === 'string') {
+        newInputs.body = {
+          ...newInputs.body,
+          data: transformToBodyPayload(bodyData, [BodyType.formData, BodyType.xWwwFormUrlencoded].includes(newInputs.body.type)),
+        }
+      }
 
       setInputs(newInputs)
       setIsDataReady(true)
@@ -164,6 +168,23 @@ const useConfig = (id: string, payload: HttpNodeType) => {
     setRunInputData(newPayload)
   }, [setRunInputData])
 
+  // curl import panel
+  const [isShowCurlPanel, {
+    setTrue: showCurlPanel,
+    setFalse: hideCurlPanel,
+  }] = useBoolean(false)
+
+  const handleCurlImport = useCallback((newNode: HttpNodeType) => {
+    const newInputs = produce(inputs, (draft: HttpNodeType) => {
+      draft.method = newNode.method
+      draft.url = newNode.url
+      draft.headers = newNode.headers
+      draft.params = newNode.params
+      draft.body = newNode.body
+    })
+    setInputs(newInputs)
+  }, [inputs, setInputs])
+
   return {
     readOnly,
     isDataReady,
@@ -203,6 +224,11 @@ const useConfig = (id: string, payload: HttpNodeType) => {
     inputVarValues,
     setInputVarValues,
     runResult,
+    // curl import
+    isShowCurlPanel,
+    showCurlPanel,
+    hideCurlPanel,
+    handleCurlImport,
   }
 }
 
